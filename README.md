@@ -11,10 +11,16 @@
     })
     lastName: string;
 
-    submit() {
-      endpoint(this.values)
-        .then(values => this.reset(values))
-        .catch(errors => this.setErrors(errors));
+    onSubmit() {
+      return endpoint(this.values)
+    }
+
+    onSubmitSuccess(values: T) {
+      this.reset(T);
+    }
+
+    onSubmitFailure(errors: FormErrors<T>) {
+      this.setErrors(errors);
     }
   }
 ```
@@ -30,3 +36,11 @@ form.errors;
 
 form.submit();
 ```
+
+TODO/IDEAS:
+
+- [ ] nested fields?
+- [ ] make sure it's all observable (mobx's when, autorun, reaction should work)
+- [ ] support yup schema for fields? (e.g. yup.string(), yup.date())
+- [ ] something like `form.fieldHandler("firstName")` that will return something like
+{ onChange, name, value, required } for react
