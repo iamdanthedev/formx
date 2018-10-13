@@ -19,10 +19,12 @@ type BaseFormData = {
 export type FormState<T extends {}> = {
   clean: boolean;
   dirty: boolean;
+  invalid: boolean;
   submitting: boolean;
   errors: FormErrors<T>;
   touched: boolean;
   pristine: boolean;
+  valid: boolean;
   validating: boolean;
   values: T;
 };
@@ -52,6 +54,11 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
       (p, c) => p || c.field.dirty,
       false
     );
+  }
+
+  @computed
+  public get invalid() {
+    return !this.valid;
   }
 
   @computed
@@ -107,10 +114,12 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
     return {
       clean: !this.dirty,
       dirty: this.dirty,
+      invalid: this.invalid,
       errors: this.errors,
       pristine: !this.dirty,
-      submitting: false, // FIXME: not implemented
+      submitting: this.submitting,
       touched: this.touched,
+      valid: this.valid,
       validating: false, // FIXME: not implemented
       values: this.values
     };

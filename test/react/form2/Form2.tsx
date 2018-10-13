@@ -21,21 +21,29 @@ class Form2 extends React.Component {
         <form onReset={this.store.reset} onSubmit={this.store.submit}>
           <Grid container spacing={16}>
             <Grid item xs={12}>
-              <TextField
-                label={field("firstName").label}
-                error={field("firstName").hasError}
-                helperText={field("firstName").error}
-                {...fieldProps("firstName")}
-              />
+              <FormField store={this.store} field="firstName">
+                {field => (
+                  <TextField
+                    label={field.label}
+                    error={field.hasError}
+                    helperText={field.error}
+                    {...field.formProps}
+                  />
+                )}
+              </FormField>
             </Grid>
 
             <Grid item xs={12}>
-              <TextField
-                label={field("lastName").label}
-                error={field("lastName").hasError}
-                helperText={field("firstName").error}
-                {...this.store.fieldProps("lastName")}
-              />
+              <FormField store={this.store} field="lastName">
+                {field => (
+                  <TextField
+                    label={field.label}
+                    error={field.hasError}
+                    helperText={field.error}
+                    {...field.formProps}
+                  />
+                )}
+              </FormField>
             </Grid>
 
             <Grid item xs={12}>
@@ -60,7 +68,11 @@ class Form2 extends React.Component {
                 color="primary"
                 type="primary"
                 variant="contained"
-                disabled={this.store.submitting || this.store.clean}
+                disabled={
+                  this.store.submitting ||
+                  this.store.clean ||
+                  this.store.invalid
+                }
               >
                 {this.store.submitting ? "Submitting..." : "Submit"}
               </Button>{" "}
