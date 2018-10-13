@@ -63,6 +63,13 @@ class Form2 extends React.Component {
                 disabled={this.store.submitting || this.store.clean}
               >
                 {this.store.submitting ? "Submitting..." : "Submit"}
+              </Button>{" "}
+              <Button
+                type="reset"
+                variant="contained"
+                disabled={this.store.clean}
+              >
+                Reset
               </Button>
             </Grid>
           </Grid>
