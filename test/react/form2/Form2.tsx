@@ -87,10 +87,25 @@ class Form2 extends React.Component {
           </Grid>
         </form>
 
-        <div>
-          <h4>Form State (store.state)</h4>
-          <pre>{JSON.stringify(this.store.state, null, 4)}</pre>
-        </div>
+        <Grid container>
+          <Grid item xs={6}>
+            <h4>Form State (store.state)</h4>
+            <pre>{JSON.stringify(this.store.state, null, 4)}</pre>
+          </Grid>
+
+          <Grid item xs={6}>
+            {!this.store.focusedField && "No field in focus"}
+
+            {this.store.focusedField && (
+              <>
+                <h4>Field State {this.store.focusedField.name}</h4>
+                <pre>
+                  {JSON.stringify(this.store.focusedField.state, null, 4)}
+                </pre>
+              </>
+            )}
+          </Grid>
+        </Grid>
       </section>
     );
   }

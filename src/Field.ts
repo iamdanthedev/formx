@@ -11,10 +11,18 @@ export type FieldOptions<T> = {
   validate?: FieldValidateCallback<T>;
 };
 
-const defaultOptions: Partial<FieldOptions<any>> = {
-  initialValue: null,
-  name: "unnamed",
-  validate: null
+export type FieldState<T> = {
+  clear: boolean;
+  dirty: boolean;
+  disabled: boolean;
+  error: string;
+  focused: boolean;
+  invalid: boolean;
+  label: string;
+  name: string;
+  touched: boolean;
+  valid: boolean;
+  value: T;
 };
 
 export class Field<T> {
@@ -25,6 +33,9 @@ export class Field<T> {
 
   @observable
   private _error: string = null;
+
+  @observable
+  private _focused = false;
 
   @observable
   private _label: string = "";
@@ -45,7 +56,7 @@ export class Field<T> {
     private readonly _formStore: FormStore<any>,
     private readonly _initialOptions: FieldOptions<T>
   ) {
-    this._log("constructor", _initialOptions);
+    this.log("constructor", _initialOptions);
 
     this._options = {
       ..._initialOptions,
@@ -76,6 +87,11 @@ export class Field<T> {
   }
 
   @computed
+  public get focused() {
+    return this._focused;
+  }
+
+  @computed
   get hasError() {
     return Boolean(this._error);
   }
@@ -95,12 +111,29 @@ export class Field<T> {
   }
 
   @computed
+  public get state(): FieldState<T> {
+    return {
+      clear: !this.dirty,
+      dirty: this.dirty,
+      disabled: this.disabled,
+      error: this.error,
+      focused: this.focused,
+      invalid: !this.valid,
+      label: this.label,
+      name: this.name,
+      touched: this.touched,
+      valid: this.valid,
+      value: this.value
+    };
+  }
+
+  @computed
   public get touched() {
     return this._touched;
   }
 
   public set touched(v: boolean) {
-    this._log("set touched", v);
+    this.log("set touched", v);
     this._touched = v;
   }
 
@@ -128,21 +161,11 @@ export class Field<T> {
   @computed
   public get formProps() {
     return {
-      // error: field.error ? field.error : undefined,
-      onChange: e => {
-        this._log("onChange", e);
-
-        if (!e || !e.target || typeof e.target.value === "undefined") {
-          console.error("Invalid event");
-          return;
-        }
-
-        this.value = e.target.value;
-      },
-      onBlur: e => (this.touched = true),
+      onBlur: this.onBlur,
+      onChange: this.onChange,
+      onFocus: this.onFocus,
       // @ts-ignore
       name: this.name,
-      // valid: !Boolean(field.error),
       value: this.value
     };
   }
@@ -151,7 +174,32 @@ export class Field<T> {
     this.value = this._options.initialValue;
   }
 
-  protected _log(...args: any[]) {
+  @action.bound
+  protected onBlur() {
+    this.log("onBlur");
+    this._focused = false;
+    this.touched = true;
+  }
+
+  @action.bound
+  protected onChange(e) {
+    this.log("onChange", e);
+
+    if (!e || !e.target || typeof e.target.value === "undefined") {
+      console.error("Invalid event");
+      return;
+    }
+
+    this.value = e.target.value;
+  }
+
+  @action.bound
+  protected onFocus() {
+    this.log("onFocus");
+    this._focused = true;
+  }
+
+  protected log(...args: any[]) {
     console.log(`Field ${this.name}`, ...args);
   }
 

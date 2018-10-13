@@ -57,6 +57,12 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
   }
 
   @computed
+  public get focusedField() {
+    const field = this._administration.fieldsArray.find(f => f.field.focused);
+    return field ? field.field : null;
+  }
+
+  @computed
   public get invalid() {
     return !this.valid;
   }
