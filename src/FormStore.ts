@@ -15,7 +15,7 @@ type BaseFormData = {
   [K: string]: any;
 };
 
-type FormState<T extends {}> = {
+export type FormState<T extends {}> = {
   clean: boolean;
   dirty: boolean;
   submitting: boolean;
@@ -125,24 +125,7 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
       return null;
     }
 
-    return {
-      // error: field.error ? field.error : undefined,
-      onChange: e => {
-        this._log("onChange", e);
-
-        if (!e || !e.target || typeof e.target.value === "undefined") {
-          console.error("Invalid event");
-          return;
-        }
-
-        field.value = e.target.value;
-      },
-      onBlur: e => (field.touched = true),
-      // @ts-ignore
-      name: key,
-      // valid: !Boolean(field.error),
-      value: field.value
-    };
+    return field.formProps;
   }
 
   onSubmit?(): Promise<any>;

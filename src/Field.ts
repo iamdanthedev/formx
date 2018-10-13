@@ -125,6 +125,28 @@ export class Field<T> {
     return this._error;
   }
 
+  @computed
+  public get formProps() {
+    return {
+      // error: field.error ? field.error : undefined,
+      onChange: e => {
+        this._log("onChange", e);
+
+        if (!e || !e.target || typeof e.target.value === "undefined") {
+          console.error("Invalid event");
+          return;
+        }
+
+        this.value = e.target.value;
+      },
+      onBlur: e => (this.touched = true),
+      // @ts-ignore
+      name: this.name,
+      // valid: !Boolean(field.error),
+      value: this.value
+    };
+  }
+
   public reset() {
     this.value = this._options.initialValue;
   }

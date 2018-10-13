@@ -3,6 +3,7 @@ import { observer } from "mobx-react";
 import Grid from "@material-ui/core/Grid";
 import Typography from "@material-ui/core/Typography";
 import TextField from "@material-ui/core/TextField";
+import FormField from "../../../src/react/FormField";
 import { Form2Store } from "./Form2.store";
 
 @observer
@@ -34,6 +35,19 @@ class Form2 extends React.Component {
                 helperText={field("firstName").error}
                 {...this.store.fieldProps("lastName")}
               />
+            </Grid>
+
+            <Grid item xs={12}>
+              <FormField store={this.store} field="zipCode">
+                {field => (
+                  <TextField
+                    label={field.label}
+                    error={field.hasError}
+                    helperText={field.error}
+                    {...field.formProps}
+                  />
+                )}
+              </FormField>
             </Grid>
 
             <Grid item>
