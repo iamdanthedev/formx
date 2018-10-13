@@ -4,16 +4,15 @@ import { computed } from "mobx";
 const onlyLetters = value =>
   value.match(/^[a-zA-Z]*$/) ? true : "Only letters";
 
-const onlyNumbers = value =>
-  value.match(/^[0-9]*$/) ? true : "Only numbers";
+const onlyNumbers = value => (value.match(/^[0-9]*$/) ? true : "Only numbers");
 
-interface Form1Data {
+interface Form2Data {
   firstName: string;
   lastName: string;
   zipCode: string;
 }
 
-export class Form2Store extends FormStore<Form1Data> implements Form1Data {
+export class Form2Store extends FormStore<Form2Data> implements Form2Data {
   __name = "Form2";
 
   constructor() {
@@ -47,4 +46,15 @@ export class Form2Store extends FormStore<Form1Data> implements Form1Data {
   get name() {
     return `${this.firstName} ${this.lastName}`.trim();
   }
+
+  onSubmit() {
+    return stubSubmit(this.values);
+  }
+}
+
+function stubSubmit(values: Form2Data) {
+  return new Promise(resolve => {
+    console.log("Submitting...", values);
+    setTimeout(resolve, 2000);
+  });
 }

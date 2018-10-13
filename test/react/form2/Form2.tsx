@@ -1,5 +1,6 @@
 import * as React from "react";
 import { observer } from "mobx-react";
+import Button from "@material-ui/core/Button";
 import Grid from "@material-ui/core/Grid";
 import Typography from "@material-ui/core/Typography";
 import TextField from "@material-ui/core/TextField";
@@ -17,7 +18,7 @@ class Form2 extends React.Component {
       <section>
         <h2>Form 2 Test</h2>
 
-        <form>
+        <form onReset={this.store.reset} onSubmit={this.store.submit}>
           <Grid container spacing={16}>
             <Grid item xs={12}>
               <TextField
@@ -50,8 +51,19 @@ class Form2 extends React.Component {
               </FormField>
             </Grid>
 
-            <Grid item>
+            <Grid item xs={12}>
               <Typography>Computed name: {this.store.name}</Typography>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Button
+                color="primary"
+                type="primary"
+                variant="contained"
+                disabled={this.store.submitting || this.store.clean}
+              >
+                {this.store.submitting ? "Submitting..." : "Submit"}
+              </Button>
             </Grid>
           </Grid>
         </form>

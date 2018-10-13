@@ -1,3 +1,4 @@
+import * as React from "react";
 import { action, computed, observable } from "mobx";
 import { FormAdministration } from "./FormAdministration";
 import { Field } from "./Field";
@@ -37,6 +38,12 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
   constructor() {
     this.field = this.field.bind(this);
     this.fieldProps = this.fieldProps.bind(this);
+    this.submit = this.submit.bind(this);
+  }
+
+  @computed
+  public get clean() {
+    return !this.dirty;
   }
 
   @computed
@@ -113,6 +120,9 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
     return this._administration.getField(key);
   }
 
+  /**
+   * @todo probably not needed
+   */
   public fieldProps<K extends keyof T = keyof T>(
     key: K
   ): CommonFieldProps<T[K]> {
@@ -128,9 +138,39 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
     return field.formProps;
   }
 
+  @action
+  public submit(e: React.FormEvent<HTMLFormElement>) {
+    this._log("submit");
+
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+
+    if (!this.onSubmit) {
+      throw new Error("onSubmit handler is missing");
+    }
+
+    this._submitting = true;
+
+    this.onSubmit()
+      .then(res => {
+        this._submitting = false;
+        this.onSubmitSuccess && this.onSubmitSuccess(res);
+      })
+      .catch(e => {
+        this._submitting = false;
+
+        if (this.onSubmitFail) {
+          this.onSubmitFail(e);
+        } else {
+          throw e;
+        }
+      });
+  }
+
   onSubmit?(): Promise<any>;
-  onSubmitSuccess?(): Promise<T>;
-  onSubmitFail?(): Promise<FormErrors<T>>;
+  onSubmitSuccess?(submitRes: any): Promise<T>;
+  onSubmitFail?(e: any): Promise<FormErrors<T>>;
 
   @action.bound
   reset() {
@@ -154,31 +194,4 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
 
     return administration;
   }
-}
-
-export function formStore() {
-  return function(target: any) {
-    const original = target;
-
-    // a utility function to generate instances of a class
-    function construct(constructor, args) {
-      var c: any = function() {
-        return constructor.apply(this, args);
-      };
-      c.prototype = constructor.prototype;
-      return new c();
-    }
-
-    // the new constructor behaviour
-    const f: any = function(...args) {
-      console.log("New: " + original.name);
-      return construct(original, args);
-    };
-
-    // copy prototype so intanceof operator still works
-    f.prototype = original.prototype;
-
-    // return new constructor (will override original)
-    return f;
-  };
 }
