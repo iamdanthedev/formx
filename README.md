@@ -41,7 +41,7 @@ TODO/IDEAS:
 
 - [ ] nested fields?
 - [ ] async validation?
-- [ ] make sure it's all observable (mobx's when, autorun, reaction should work)
+- [x] make sure it's all observable (mobx's when, autorun, reaction should work)
 - [ ] support yup schema for fields? (e.g. yup.string(), yup.date())
-- [ ] something like `form.fieldHandler("firstName")` that will return something like
+- [x] something like `form.fieldHandler("firstName")` that will return something like
 { onChange, name, value, required } for react
