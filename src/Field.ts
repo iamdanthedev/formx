@@ -76,6 +76,11 @@ export class Field<T> {
   }
 
   @computed
+  get hasError() {
+    return Boolean(this._error);
+  }
+
+  @computed
   public get label() {
     return this._label;
   }

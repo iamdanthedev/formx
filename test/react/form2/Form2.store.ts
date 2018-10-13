@@ -2,7 +2,7 @@ import { FormStore, observableField } from "../../../src";
 import { computed } from "mobx";
 
 const onlyLetters = value =>
-  value.match(/^[a-zA-Z]$/) ? true : "Only letters";
+  value.match(/^[a-zA-Z]*$/) ? true : "Only letters";
 
 interface Form1Data {
   firstName: string;

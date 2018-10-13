@@ -21,13 +21,17 @@ class Form2 extends React.Component {
             <Grid item xs={12}>
               <TextField
                 label={field("firstName").label}
+                error={field("firstName").hasError}
+                helperText={field("firstName").error}
                 {...fieldProps("firstName")}
               />
             </Grid>
 
             <Grid item xs={12}>
               <TextField
-                label="Last name"
+                label={field("lastName").label}
+                error={field("lastName").hasError}
+                helperText={field("firstName").error}
                 {...this.store.fieldProps("lastName")}
               />
             </Grid>
@@ -41,21 +45,6 @@ class Form2 extends React.Component {
         <div>
           <h4>Form State (store.state)</h4>
           <pre>{JSON.stringify(this.store.state, null, 4)}</pre>
-        </div>
-
-        <div>
-          <h4>Store:</h4>
-          <pre>{JSON.stringify(this.store, null, 4)}</pre>
-        </div>
-
-        <div>
-          <h4>Store.values:</h4>
-          <pre>{JSON.stringify(this.store.values, null, 4)}</pre>
-        </div>
-
-        <div>
-          <h4>Store.errors:</h4>
-          <pre>{JSON.stringify(this.store.errors, null, 4)}</pre>
         </div>
       </section>
     );
