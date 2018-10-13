@@ -1,6 +1,5 @@
-import { observable } from "mobx";
 import { expect } from "chai";
-import { formStore, FormStore } from "../src/FormStore";
+import { FormStore } from "../src/FormStore";
 import { observableField } from "../src/Field";
 
 type TestFormData = {

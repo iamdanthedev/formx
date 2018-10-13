@@ -4,16 +4,48 @@ import { Field } from "./Field";
 
 export type FormErrors<T extends {}> = Record<keyof T, string>;
 
-export class FormStore<T extends {}> {
+export type CommonFieldProps<T> = {
+  onBlur: (e) => void;
+  onChange: (e) => void;
+  name: string;
+  value: T;
+};
+
+type BaseFormData = {
+  [K: string]: any;
+};
+
+type FormState<T extends {}> = {
+  clean: boolean;
+  dirty: boolean;
+  submitting: boolean;
+  errors: FormErrors<T>;
+  touched: boolean;
+  pristine: boolean;
+  validating: boolean;
+  values: T;
+};
+
+export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
+  protected __name = "unnamed-form-store";
+
   @observable
   private _submitting = false;
 
-  @observable
-  private _valid = false;
-
   // private _fields = observable.map<keyof T, Field<any>>();
 
-  constructor() {}
+  constructor() {
+    this.field = this.field.bind(this);
+    this.fieldProps = this.fieldProps.bind(this);
+  }
+
+  @computed
+  public get dirty() {
+    return this._administration.fieldsArray.reduce(
+      (p, c) => p || c.field.dirty,
+      false
+    );
+  }
 
   @computed
   public get submitting() {
@@ -21,8 +53,19 @@ export class FormStore<T extends {}> {
   }
 
   @computed
+  public get touched() {
+    return this._administration.fieldsArray.reduce(
+      (p, c) => p || c.field.touched,
+      false
+    );
+  }
+
+  @computed
   public get valid() {
-    return this._valid;
+    return this._administration.fieldsArray.reduce(
+      (p, c) => p && c.field.valid,
+      true
+    );
   }
 
   @computed
@@ -52,12 +95,74 @@ export class FormStore<T extends {}> {
     return result;
   }
 
+  @computed
+  get state(): FormState<T> {
+    return {
+      clean: !this.dirty,
+      dirty: this.dirty,
+      errors: this.errors,
+      pristine: !this.dirty,
+      submitting: false, // FIXME: not implemented
+      touched: this.touched,
+      validating: false, // FIXME: not implemented
+      values: this.values
+    };
+  }
+
+  public field(key: K) {
+    return this._administration.getField(key);
+  }
+
+  public fieldProps<K extends keyof T = keyof T>(
+    key: K
+  ): CommonFieldProps<T[K]> {
+    const field = this._administration.getField(key);
+
+    if (!field) {
+      console.error(
+        `Field ${key} not found. All fields must be initialized with @observableField`
+      );
+      return null;
+    }
+
+    return {
+      // error: field.error ? field.error : undefined,
+      onChange: e => {
+        this._log("onChange", e);
+
+        if (!e || !e.target || typeof e.target.value === "undefined") {
+          console.error("Invalid event");
+          return;
+        }
+
+        field.value = e.target.value;
+      },
+      onBlur: e => (field.touched = true),
+      // @ts-ignore
+      name: key,
+      // valid: !Boolean(field.error),
+      value: field.value
+    };
+  }
+
   onSubmit?(): Promise<any>;
   onSubmitSuccess?(): Promise<T>;
   onSubmitFail?(): Promise<FormErrors<T>>;
+
+  @action.bound
+  reset() {
+    Object.keys(this._administration.fields).forEach(key => {
+      this._administration.fields[key].reset();
+    });
+  }
+
   validate?(): Promise<T>;
 
-  private get _administration(): FormAdministration {
+  protected _log(...args: any[]) {
+    console.log(`FormStore ${this.__name}`, ...args);
+  }
+
+  private get _administration(): FormAdministration<T> {
     const administration = this["__FormAdministration"];
 
     if (!administration) {

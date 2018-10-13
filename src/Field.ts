@@ -1,16 +1,19 @@
-import { computed, extendObservable, observable } from "mobx";
+import { action, computed, extendObservable, observable } from "mobx";
 import { FormAdministration } from "./FormAdministration";
 import { FormStore } from "./FormStore";
 
 type FieldValidateCallback<T> = (value: T) => boolean | string;
 
 export type FieldOptions<T> = {
-  defaultValue: T;
-  validate: FieldValidateCallback<T>;
+  initialValue: T;
+  label?: string;
+  name?: string;
+  validate?: FieldValidateCallback<T>;
 };
 
-const defaultOptions: FieldOptions<any> = {
-  defaultValue: null,
+const defaultOptions: Partial<FieldOptions<any>> = {
+  initialValue: null,
+  name: "unnamed",
   validate: null
 };
 
@@ -18,42 +21,111 @@ export class Field<T> {
   private readonly _options: FieldOptions<T>;
 
   @observable
-  private _value: T;
+  private _disabled: boolean = false;
 
   @observable
   private _error: string = null;
+
+  @observable
+  private _label: string = "";
+
+  @observable
+  private _name: string = "unnamed";
+
+  @observable
+  private _touched: boolean = false;
+
+  @observable
+  private _value: T;
 
   constructor(
     /**
      * todo: does it need to know the formStore?
      */
     private readonly _formStore: FormStore<any>,
-    private readonly _initialOptions: Partial<FieldOptions<T>>
+    private readonly _initialOptions: FieldOptions<T>
   ) {
+    this._log("constructor", _initialOptions);
+
     this._options = {
-      defaultValue:
-        _initialOptions.defaultValue != null
-          ? _initialOptions.defaultValue
+      ..._initialOptions,
+      initialValue:
+        _initialOptions.initialValue != null
+          ? _initialOptions.initialValue
           : null,
       validate: _initialOptions.validate || null
     };
 
-    this._value = this._options.defaultValue;
+    this._label = this._options.label;
+    this._name = this._options.name;
+    this._value = this._options.initialValue;
   }
 
   @computed
-  get value() {
+  public get dirty() {
+    return this._value !== this._options.initialValue;
+  }
+
+  @computed
+  public get disabled() {
+    return this._disabled;
+  }
+
+  public set disabled(v: boolean) {
+    this._disabled = v;
+  }
+
+  @computed
+  public get label() {
+    return this._label;
+  }
+
+  public set label(v: string) {
+    this._label = v;
+  }
+
+  @computed
+  public get name(): string {
+    return this._name;
+  }
+
+  @computed
+  public get touched() {
+    return this._touched;
+  }
+
+  public set touched(v: boolean) {
+    this._log("set touched", v);
+    this._touched = v;
+  }
+
+  @computed
+  public get valid() {
+    return !Boolean(this._error);
+  }
+
+  @computed
+  public get value() {
     return this._value;
   }
 
-  set value(v: T) {
+  public set value(v: T) {
     this._value = v;
+    this.touched = true;
     this._validate();
   }
 
   @computed
-  get error() {
+  public get error() {
     return this._error;
+  }
+
+  public reset() {
+    this.value = this._options.initialValue;
+  }
+
+  protected _log(...args: any[]) {
+    console.log(`Field ${this.name}`, ...args);
   }
 
   private _validate() {
@@ -83,11 +155,9 @@ export class Field<T> {
   }
 }
 
-export function observableField<T>(options: Partial<FieldOptions<T>> = {}) {
-  const { defaultValue } = options;
-
+export function observableField<T>(options: FieldOptions<T>) {
   return function(target: FormStore<any>, property: string) {
-    const field = new Field(target, options);
+    const field = new Field(target, { name: property, ...options });
 
     delete target[property];
 
@@ -113,7 +183,7 @@ export function observableField<T>(options: Partial<FieldOptions<T>> = {}) {
       });
     }
 
-    (target["__FormAdministration"] as FormAdministration).registerField(
+    (target["__FormAdministration"] as FormAdministration<any>).registerField(
       property,
       field
     );
