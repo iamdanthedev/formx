@@ -1,5 +1,5 @@
+import { autorun, computed } from "mobx";
 import { FormStore, observableField } from "../../../src";
-import { computed } from "mobx";
 
 const onlyLetters = value =>
   value.match(/^[a-zA-Z]*$/) ? true : "Only letters";

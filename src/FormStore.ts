@@ -35,8 +35,6 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
   @observable
   private _submitting = false;
 
-  // private _fields = observable.map<keyof T, Field<any>>();
-
   constructor() {
     this.field = this.field.bind(this);
     this.fieldProps = this.fieldProps.bind(this);
@@ -54,6 +52,11 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
       (p, c) => p || c.field.dirty,
       false
     );
+  }
+
+  @computed
+  public get fields(): Array<Field<any>> {
+    return this._administration.fieldsArray.map(f => f.field);
   }
 
   @computed
@@ -187,6 +190,14 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
   onSubmitSuccess?(submitRes: any): Promise<T>;
   onSubmitFail?(e: any): Promise<FormErrors<T>>;
 
+  /**
+   * @todo: remove name argugment, should user field.name
+   */
+  @action.bound
+  registerField<V>(name: string, field: Field<V>) {
+    this._administration.registerField(name, field);
+  }
+
   @action.bound
   reset() {
     Object.keys(this._administration.fields).forEach(key => {
@@ -201,12 +212,15 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
   }
 
   private get _administration(): FormAdministration<T> {
-    const administration = this["__FormAdministration"];
-
-    if (!administration) {
-      throw new Error("Missing administration object");
+    if (!this["__FormAdministration"]) {
+      Object.defineProperty(this, "__FormAdministration", {
+        configurable: false,
+        enumerable: false,
+        value: new FormAdministration(),
+        writable: false
+      });
     }
 
-    return administration;
+    return this["__FormAdministration"];
   }
 }
