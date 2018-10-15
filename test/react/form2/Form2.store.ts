@@ -1,10 +1,6 @@
 import { autorun, computed } from "mobx";
 import { FormStore, observableField } from "../../../src";
-
-const onlyLetters = value =>
-  value.match(/^[a-zA-Z]*$/) ? true : "Only letters";
-
-const onlyNumbers = value => (value.match(/^[0-9]*$/) ? true : "Only numbers");
+import { onlyLetters, onlyNumbers } from "../../utils";
 
 interface Form2Data {
   firstName: string;
