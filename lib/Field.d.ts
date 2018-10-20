@@ -63,5 +63,4 @@ export declare class Field<T> {
     protected log(...args: any[]): void;
     private _validate;
 }
-export declare function observableField<T>(options: FieldOptions<T>): (target: FormStore<any, string | number | symbol>, property: string) => void;
 export {};
