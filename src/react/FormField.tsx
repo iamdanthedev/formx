@@ -9,7 +9,7 @@ type Props<T extends {}, K extends keyof T = keyof T> = {
   field: K;
 };
 
-class FormField<T> extends React.Component<Props<T>> {
+class FormField<T extends {}, K extends keyof T = keyof T> extends React.Component<Props<T>> {
   render() {
     const { children, field: key, store } = this.props;
 
