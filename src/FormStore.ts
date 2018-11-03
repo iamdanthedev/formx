@@ -1,7 +1,8 @@
 import * as React from "react";
 import { action, computed, observable } from "mobx";
 import { FormAdministration } from "./FormAdministration";
-import { Field } from "./Field";
+import { Field, FieldOptions } from "./Field";
+import { objectToFlatMapDeep } from "./utils";
 
 export type FormErrors<T extends {}> = Record<keyof T, string>;
 
@@ -14,6 +15,14 @@ export type CommonFieldProps<T> = {
 
 type BaseFormData = {
   [K: string]: any;
+};
+
+type FieldsDescription<T> = T extends object
+  ? FieldsDescriptionObject<T>
+  : FieldOptions<T>;
+
+type FieldsDescriptionObject<T extends BaseFormData> = {
+  [K in keyof T]: FieldsDescription<T[K]>
 };
 
 export type FormState<T extends {}> = {
@@ -31,11 +40,15 @@ export type FormState<T extends {}> = {
 
 export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
   protected __name = "unnamed-form-store";
+  private readonly _administration: FormAdministration<T>;
 
   @observable
-  private _submitting = false;
+  private _submitting;
 
-  constructor() {
+  constructor(fields: FieldsDescription<T>) {
+    this._administration = new FormAdministration();
+    this._registerFields(fields);
+
     this.field = this.field.bind(this);
     this.fieldProps = this.fieldProps.bind(this);
     this.submit = this.submit.bind(this);
@@ -211,16 +224,16 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
     console.log(`FormStore ${this.__name}`, ...args);
   }
 
-  private get _administration(): FormAdministration<T> {
-    if (!this["__FormAdministration"]) {
-      Object.defineProperty(this, "__FormAdministration", {
-        configurable: false,
-        enumerable: false,
-        value: new FormAdministration(),
-        writable: false
-      });
-    }
+  private _registerFields(fields: FieldsDescription<T>) {
+    const fieldMap = objectToFlatMapDeep(
+      fields,
+      "",
+      f => f.__formxFieldOptions
+    );
 
-    return this["__FormAdministration"];
+    fieldMap.forEach(({ path, value: fieldOptions }) => {
+      const field = new Field(null, fieldOptions);
+      this._administration.registerField(path, field);
+    });
   }
 }

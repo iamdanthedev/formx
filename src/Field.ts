@@ -55,8 +55,6 @@ export class Field<T> {
     private readonly _formStore: FormStore<any>,
     private readonly _initialOptions: FieldOptions<T>
   ) {
-    this.log("constructor", _initialOptions);
-
     this._options = {
       ..._initialOptions,
       initialValue:
@@ -69,6 +67,8 @@ export class Field<T> {
     this._label = this._options.label;
     this._name = this._options.name;
     this._value = this._options.initialValue;
+
+    this.log("constructor", _initialOptions);
   }
 
   @computed
@@ -226,5 +226,12 @@ export class Field<T> {
 
     // @ts-ignore
     this._error = result.toString();
+  }
+}
+
+export function field<T>(options: FieldOptions<T>) {
+  return {
+    __formxFieldOptions: true,
+    ...options,
   }
 }
