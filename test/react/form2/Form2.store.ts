@@ -1,13 +1,13 @@
-import { computed } from "mobx";
-import { field, FormStore } from "../../../src";
-import { onlyLetters, onlyNumbers } from "../../utils";
+import * as yup from "yup";
+import { FormStore } from "../../../src";
+import { capitalFirst, onlyNumbersRe } from "../../utils";
 
 interface Address {
   street: string;
   zipCode: string;
 }
 
-class Form2Data {
+interface Form2Data {
   firstName: string;
   lastName: string;
   address: Address;
@@ -18,6 +18,26 @@ class Form2Data {
   }>;
 }
 
+const schema = yup.object<Form2Data>({
+  firstName: yup.string().required("missing first name"),
+  lastName: yup.string().required("missing last name"),
+  address: yup
+    .object<Address>({
+      zipCode: yup.string().matches(onlyNumbersRe, "only numbers here"),
+      street: yup.string()
+    })
+    .nullable(true),
+  contacts: yup.array(
+    yup.object({
+      name: yup.string().matches(capitalFirst, "Capital letter first"),
+      job: yup.string()
+    })
+  ),
+  specializations: yup
+    .array(yup.string())
+    .min(1, "select at least one specialization")
+});
+
 const form2InitialValues = {
   firstName: "",
   lastName: "",
@@ -27,6 +47,8 @@ const form2InitialValues = {
 };
 
 export class Form2Store extends FormStore<Form2Data> {
+  validationSchema = schema;
+
   constructor() {
     super();
 

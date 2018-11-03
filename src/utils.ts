@@ -1,29 +1,52 @@
-export function objectToFlatMapDeep(
-  obj: object,
-  currentPath = "",
-  isFinal?: (v: any) => boolean
-) {
-  const result: Array<{ path: string; value: any }> = [];
+import set from "lodash.set";
+import { BaseFormData, FormErrors } from "./types";
 
-  Object.keys(obj).forEach(key => {
-    const val = obj[key];
-    const childPath = `${currentPath}${key}`;
+/**
+ * Validate a yup schema.
+ * https://github.com/jaredpalmer/formik/blob/master/src/Formik.tsx
+ */
+export function validateYupSchema<T extends BaseFormData>(
+  values: T,
+  schema: any,
+  sync: boolean = false,
+  context: any = {}
+): Promise<Partial<T>> {
+  let validateData: Partial<T> = {};
 
-    if (isFinal && isFinal(val)) {
-      result.push({ path: `${childPath}`, value: val });
-    } else if (Array.isArray(val)) {
-      val.forEach((v, i) => {
-        const res = objectToFlatMapDeep(v, `${childPath}.${i}.`, isFinal);
-        result.push(...res);
-      });
-    } else if (val instanceof Date) {
-      result.push({ path: `${childPath}`, value: val });
-    } else if (typeof val === "object") {
-      result.push(...objectToFlatMapDeep(val, `${childPath}.`, isFinal));
-    } else {
-      result.push({ path: `${childPath}`, value: val });
+  for (let k in values) {
+    if (values.hasOwnProperty(k)) {
+      const key = String(k);
+      validateData[key] = values[key] !== "" ? values[key] : undefined;
     }
-  });
+  }
 
-  return result;
+  return schema[sync ? "validateSync" : "validate"](validateData, {
+    abortEarly: false,
+    context: context
+  });
 }
+/**
+ * Transform Yup ValidationError to a more usable object
+ * https://github.com/jaredpalmer/formik/blob/master/src/Formik.tsx
+ */
+export function yupToFormErrors<Values>(yupError: any): FormErrors<Values> {
+  let errors: any = {} as FormErrors<Values>;
+
+  if (yupError.inner.length === 0) {
+    return set(errors, yupError.path, yupError.message);
+  }
+
+  for (let err of yupError.inner) {
+    if (!errors[err.path]) {
+      errors = set(errors, err.path, err.message);
+    }
+  }
+
+  return errors;
+}
+
+export const isObject = (obj: any): boolean =>
+  obj !== null && typeof obj === "object";
+
+export const isPromise = (value: any): value is PromiseLike<any> =>
+  isObject(value) && typeof value.then === "function";

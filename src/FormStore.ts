@@ -1,62 +1,39 @@
 import { toJS } from "mobx";
 import * as React from "react";
-import clone from "lodash.clone";
-import isEqual from "lodash.isequal";
-import get from "lodash.get";
-import set from "lodash.set";
+import { clone, isEqual, get, set, merge } from "lodash";
 import { action, computed, observable } from "mobx";
-import { Field, FieldOptions } from "./Field";
+import { Field } from "./Field";
+import { FormState, BaseFormData, FormErrors, FormFields } from "./types";
+import { yupToFormErrors, validateYupSchema, isPromise } from "./utils";
 
-export type FormErrors<T extends {}> = Record<keyof T, string>;
+export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
+  /**
+   * This is probably a bit unconventional way of configuring;
+   */
 
-export type CommonFieldProps<T> = {
-  onBlur: (e) => void;
-  onChange: (e) => void;
-  name: string;
-  value: T;
-};
+  onSubmit?: () => Promise<any>;
+  onSubmitSuccess?: (submitRes: any) => Promise<T>;
+  onSubmitFail?: (e: any) => Promise<FormErrors<T>>;
+  validate?(): () => FormErrors<T> | Promise<any> | void;
+  validationSchema?: any | (() => any);
 
-type BaseFormData = {
-  [K: string]: any;
-};
-
-type FieldsDescription<T> = T extends object
-  ? FieldsDescriptionObject<T>
-  : FieldOptions<T>;
-
-type FieldsDescriptionObject<T extends BaseFormData> = {
-  [K in keyof T]: FieldsDescription<T[K]>
-};
-
-export type FormState<T extends {}> = {
-  clean: boolean;
-  dirty: boolean;
-  invalid: boolean;
-  submitting: boolean;
-  errors: FormErrors<T>;
-  touched: boolean;
-  pristine: boolean;
-  valid: boolean;
-  validating: boolean;
-  values: T;
-};
-
-type FormFields<T> = { [K in keyof T]?: Field<T[K]> };
-
-export abstract class FormStore<
-  T extends BaseFormData,
-  K extends keyof T = keyof T
-> {
   protected __name = "unnamed-form-store";
   // private readonly _administration: FormAdministration<T>;
 
   @observable
-  private _submitting;
+  private _isSubmitting = false;
+
+  @observable
+  private _isValidating = false;
+
+  @observable
+  private _disabled = false;
 
   @observable
   private _fields: FormFields<T> = {};
 
   private _values = observable.box<T>({} as any);
+  private _errors = observable.box<FormErrors<T>>();
 
   @observable
   private _initialValues: T;
@@ -65,13 +42,7 @@ export abstract class FormStore<
   private _initialized = false;
 
   constructor() {
-    // this._administration = new FormAdministration();
-    // this._registerFields(fields);
-
     this.getField = this.getField.bind(this);
-    // this.fieldProps = this.fieldProps.bind(this);
-    // this.registerField = this.registerField.bind(this);
-    // this.unregisterField = this.unregisterField.bind(this);
     this.onResetHandler = this.onResetHandler.bind(this);
     this.submit = this.submit.bind(this);
   }
@@ -88,14 +59,18 @@ export abstract class FormStore<
   }
 
   @computed
+  public get disabled() {
+    return this._disabled;
+  }
+
+  public set disabled(v: boolean) {
+    this._disabled = v;
+  }
+
+  @computed
   public get dirty() {
     return !isEqual(this._values.get(), toJS(this._initialValues));
   }
-
-  // @computed
-  // public get fields(): Array<Field<any>> {
-  //   return this._administration.fieldsArray.map(f => f.field);
-  // }
 
   @computed
   public get focusedField() {
@@ -109,8 +84,13 @@ export abstract class FormStore<
   }
 
   @computed
-  public get submitting() {
-    return this._submitting;
+  public get isSubmitting() {
+    return this._isSubmitting;
+  }
+
+  @computed
+  public get isValidating() {
+    return this._isValidating;
   }
 
   @computed
@@ -120,7 +100,11 @@ export abstract class FormStore<
 
   @computed
   public get valid() {
-    return this.fieldsArray.reduce((p, c) => p && c.field.valid, true);
+    if (!this.errors) {
+      return true;
+    }
+
+    return Object.keys(this.errors).length === 0;
   }
 
   @computed
@@ -130,23 +114,20 @@ export abstract class FormStore<
 
   public set values(v: T) {
     this._values.set(v);
+    this._validate();
   }
 
   @computed
-  get errors(): FormErrors<T> {
-    // FIXME: not implemented
-    return {} as any;
-    // const result = ({} as any) as FormErrors<T>;
-    // const keys = Object.getOwnPropertyNames(this._administration.fields);
-    //
-    // keys.forEach(key => {
-    //   const err = this._administration.fields[key].error;
-    //   if (err != null) {
-    //     result[key] = this._administration.fields[key].error;
-    //   }
-    // });
-    //
-    // return result;
+  public get errors() {
+    return this._errors.get();
+  }
+
+  public set errors(errs: FormErrors<T>) {
+    this._errors.set(errs);
+  }
+
+  public get initialValues() {
+    return toJS(this._initialValues);
   }
 
   @computed
@@ -154,13 +135,14 @@ export abstract class FormStore<
     return {
       clean: !this.dirty,
       dirty: this.dirty,
-      invalid: this.invalid,
       errors: this.errors,
+      initialValues: this.initialValues,
+      invalid: this.invalid,
+      isSubmitting: this.isSubmitting,
+      isValidating: this.isValidating,
       pristine: !this.dirty,
-      submitting: this.submitting,
       touched: this.touched,
       valid: this.valid,
-      validating: false, // FIXME: not implemented
       values: this.values
     };
   }
@@ -186,10 +168,21 @@ export abstract class FormStore<
     return get(this._values.get(), name);
   }
 
+  public getInitialValue(name: string) {
+    return get(toJS(this._initialValues), name);
+  }
+
+  public getError(name: string) {
+    return get(this._errors.get(), name);
+  }
+
   public setValue(name: string, value: any) {
-    const values = this._values.get();
-    set(values, name, value);
-    this._values.set(values);
+    set(this._values.get(), name, value);
+    this._validate();
+  }
+
+  public setError(name: string, err: any) {
+    set(this._errors.get(), name, err);
   }
 
   @action
@@ -204,15 +197,15 @@ export abstract class FormStore<
       throw new Error("onSubmit handler is missing");
     }
 
-    this._submitting = true;
+    this._isSubmitting = true;
 
     this.onSubmit()
       .then(res => {
-        this._submitting = false;
+        this._isSubmitting = false;
         this.onSubmitSuccess && this.onSubmitSuccess(res);
       })
       .catch(e => {
-        this._submitting = false;
+        this._isSubmitting = false;
 
         if (this.onSubmitFail) {
           this.onSubmitFail(e);
@@ -225,10 +218,6 @@ export abstract class FormStore<
   public onResetHandler(e: React.FormEvent<HTMLFormElement>) {
     this.reset();
   }
-
-  onSubmit?(): Promise<any>;
-  onSubmitSuccess?(submitRes: any): Promise<T>;
-  onSubmitFail?(e: any): Promise<FormErrors<T>>;
 
   @action.bound
   registerField<V>(name: string) {
@@ -258,9 +247,64 @@ export abstract class FormStore<
     this._values.set(values ? clone(values) : clone(toJS(this._initialValues)));
   }
 
-  // validate?(): Promise<T>;
-
   protected _log(...args: any[]) {
     console.log(`FormStore ${this.__name}`, ...args);
+  }
+
+  @action.bound
+  private _validate() {
+    this._isValidating = true;
+
+    Promise.all([
+      this.validate ? this._runValidateHandler() : {},
+      this.validationSchema ? this._runValidationSchema() : {}
+    ]).then(([handlerErrors, schemaErrors]) => {
+      const mergedErrors = merge({}, handlerErrors, schemaErrors);
+
+      this.errors = mergedErrors;
+      this._isValidating = false;
+    });
+  }
+
+  private _runValidateHandler(): Promise<FormErrors<T>> {
+    return new Promise(resolve => {
+      const maybePromisedErrors = this.validate();
+
+      if (maybePromisedErrors === undefined) {
+        resolve({});
+      } else if (isPromise(maybePromisedErrors)) {
+        maybePromisedErrors.then(
+          () => {
+            resolve({});
+          },
+          errors => {
+            resolve(errors);
+          }
+        );
+      } else {
+        resolve((maybePromisedErrors as any) as FormErrors<T>);
+      }
+    });
+  }
+
+  /**
+   * Run validation against a Yup schema and optionally run a function if successful
+   */
+  private _runValidationSchema() {
+    return new Promise(resolve => {
+      const schema =
+        typeof this.validationSchema === "function"
+          ? this.validationSchema()
+          : this.validationSchema;
+
+      validateYupSchema(this.values, schema).then(
+        () => {
+          resolve({});
+        },
+        (err: any) => {
+          resolve(yupToFormErrors(err));
+        }
+      );
+    });
   }
 }

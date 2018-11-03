@@ -42,7 +42,7 @@ class Form2 extends React.Component {
             onSubmit={this.store.submit}
           >
             <div style={{ display: "flex" }}>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: "1 0 50%" }}>
                 <Paper style={paperStyle}>
                   <Grid container>
                     <Grid item xs={12}>
@@ -50,8 +50,8 @@ class Form2 extends React.Component {
                         {field => (
                           <TextField
                             label="First name"
-                            // error={field.hasError}
-                            // helperText={field.error}
+                            error={field.invalid}
+                            helperText={field.error}
                             {...field.formProps}
                           />
                         )}
@@ -63,8 +63,8 @@ class Form2 extends React.Component {
                         {field => (
                           <TextField
                             label="Last name"
-                            // error={field.hasError}
-                            // helperText={field.error}
+                            error={field.invalid}
+                            helperText={field.error}
                             {...field.formProps}
                           />
                         )}
@@ -74,7 +74,10 @@ class Form2 extends React.Component {
                     <Grid item xs={12}>
                       <FormField name="specializations">
                         {field => (
-                          <FormControl style={{ minWidth: 200 }}>
+                          <FormControl
+                            style={{ minWidth: 200 }}
+                            error={field.invalid}
+                          >
                             <InputLabel htmlFor="select-multiple-checkbox">
                               Specializations
                             </InputLabel>
@@ -117,8 +120,8 @@ class Form2 extends React.Component {
                         {field => (
                           <TextField
                             label="Street name"
-                            // error={section("street").hasError}
-                            // helperText={section("street").error}
+                            error={field.invalid}
+                            helperText={field.error}
                             {...field.formProps}
                           />
                         )}
@@ -130,8 +133,8 @@ class Form2 extends React.Component {
                         {field => (
                           <TextField
                             label="Zip Code"
-                            // error={section("street").hasError}
-                            // helperText={section("street").error}
+                            error={field.invalid}
+                            helperText={field.error}
                             {...field.formProps}
                           />
                         )}
@@ -153,8 +156,8 @@ class Form2 extends React.Component {
                                     <TextField
                                       label="Name"
                                       fullWidth
-                                      // error={field.hasError}
-                                      // helperText={field.error}
+                                      error={field.invalid}
+                                      helperText={field.error}
                                       {...field.formProps}
                                     />
                                   )}
@@ -167,8 +170,8 @@ class Form2 extends React.Component {
                                     <TextField
                                       label="Job"
                                       fullWidth
-                                      // error={field.hasError}
-                                      // helperText={field.error}
+                                      error={field.invalid}
+                                      helperText={field.error}
                                       {...field.formProps}
                                     />
                                   )}
@@ -205,7 +208,7 @@ class Form2 extends React.Component {
                 </Paper>
               </div>
 
-              <div style={{ flex: 1, padding: "0 16px" }}>
+              <div style={{ flex: "1 0 50%", padding: "0 16px" }}>
                 <Observer>
                   {() => (
                     <div>
@@ -214,12 +217,12 @@ class Form2 extends React.Component {
                         type="primary"
                         variant="contained"
                         disabled={
-                          this.store.submitting ||
+                          this.store.isSubmitting ||
                           this.store.clean ||
                           this.store.invalid
                         }
                       >
-                        {this.store.submitting ? "Submitting..." : "Submit"}
+                        {this.store.isSubmitting ? "Submitting..." : "Submit"}
                       </Button>{" "}
                       <Button
                         type="reset"
@@ -235,12 +238,12 @@ class Form2 extends React.Component {
                 <Observer>
                   {() => (
                     <Grid container>
-                      <Grid item xs={6}>
+                      <Grid item xs={6} style={{ overflowX: "scroll" }}>
                         <h4>Form State (store.state)</h4>
                         <pre>{JSON.stringify(this.store.state, null, 4)}</pre>
                       </Grid>
 
-                      <Grid item xs={6}>
+                      <Grid item xs={6} style={{ overflowX: "scroll" }}>
                         {!this.store.focusedField && "No field in focus"}
 
                         {this.store.focusedField && (
