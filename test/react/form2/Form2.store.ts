@@ -1,50 +1,51 @@
-import { autorun, computed } from "mobx";
-import { FormStore, observableField } from "../../../src";
+import { computed } from "mobx";
+import { field, FormStore } from "../../../src";
 import { onlyLetters, onlyNumbers } from "../../utils";
 
-interface Form2Data {
-  firstName: string;
-  lastName: string;
+interface Address {
+  street: string;
   zipCode: string;
 }
 
-export class Form2Store extends FormStore<Form2Data> implements Form2Data {
-  __name = "Form2";
+class Form2Data {
+  firstName: string;
+  lastName: string;
+  address: Address;
+  specializations: string[];
+  contacts: Array<{
+    name: string;
+    job: string;
+  }>;
+}
 
+const form2InitialValues = {
+  firstName: "",
+  lastName: "",
+  address: null,
+  specializations: [],
+  contacts: []
+};
+
+export class Form2Store extends FormStore<Form2Data> {
   constructor() {
     super();
 
+    this.initialize(form2InitialValues);
+
+    this.__name = "Form2";
     window["form2"] = this;
   }
 
-  @observableField({
-    initialValue: "",
-    label: "First Name",
-    validate: onlyLetters
-  })
-  firstName: string;
-
-  @observableField({
-    initialValue: "",
-    label: "Last Name (only letters)",
-    validate: onlyLetters
-  })
-  lastName: string;
-
-  @observableField({
-    initialValue: "",
-    label: "Postal code",
-    validate: onlyNumbers
-  })
-  zipCode: string;
-
-  @computed
   get name() {
-    return `${this.firstName} ${this.lastName}`.trim();
+    return `${this.values.firstName} ${this.values.lastName}`.trim();
   }
 
   onSubmit() {
     return stubSubmit(this.values);
+  }
+
+  get allSpecializations() {
+    return ["spec1", "spec2", "spec3"];
   }
 }
 

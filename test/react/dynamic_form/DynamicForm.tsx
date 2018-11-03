@@ -116,12 +116,12 @@ export class DynamicForm extends React.Component {
                 )}
 
                 {this.store.focusedField && (
-                  <>
+                  <React.Fragment>
                     <h4>Field State {this.store.focusedField.name}</h4>
                     <pre>
                       {JSON.stringify(this.store.focusedField.state, null, 4)}
                     </pre>
-                  </>
+                  </React.Fragment>
                 )}
               </Grid>
             </Grid>

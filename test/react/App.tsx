@@ -1,44 +1,38 @@
 import * as React from "react";
-import Form1 from "./form1/Form1";
+import { BrowserRouter, Route, Switch, Link } from "react-router-dom";
+import styled from "styled-components";
+// import Form1 from "./form1/Form1";
 import Form2 from "./form2/Form2";
-import DynamicForm from "./dynamic_form/DynamicForm";
+// import DynamicForm from "./dynamic_form/DynamicForm";
 
-type State = {
-  page: string;
-};
-
-class App extends React.Component<{}, State> {
-  state: State = {
-    page: "form1"
-  };
-
-  navigate = (page: string) => this.setState({ page });
-
+class App extends React.Component {
   render() {
-    const { page } = this.state;
-
     return (
       <div>
-        <nav>
-          <a href="#" onClick={() => this.navigate("form1")}>
-            example 1
-          </a>{" "}
-          <a href="#" onClick={() => this.navigate("form2")}>
-            example 2
-          </a>{" "}
-          <a href="#" onClick={() => this.navigate("dynamic1")}>
-            dynamic form
-          </a>
-        </nav>
+        {/*<Menu>*/}
+          {/*<Link to="/form1">Form 1</Link>*/}
+          {/*<Link to="/form2">Form 2</Link>*/}
+          {/*<Link to="/dynamic1">Dynamic form</Link>*/}
+        {/*</Menu>*/}
 
-        <div>
-          {page === "form1" && <Form1 />}
-          {page === "form2" && <Form2 />}
-          {page === "dynamic1" && <DynamicForm />}
-        </div>
+        <Form2 />
+
+        {/*<Switch>*/}
+        {/*<Route path="/form1" component={Form1} />*/}
+        {/*<Route path="/form2" component={Form2} />*/}
+        {/*<Route path="/dynamic1" component={DynamicForm} />*/}
+        {/*</Switch>*/}
       </div>
     );
   }
 }
+
+const Menu = styled.div`
+  a {
+    display: inline-flex;
+    list-style: none;
+    margin-right: 1rem;
+  }
+`;
 
 export default App;

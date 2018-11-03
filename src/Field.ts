@@ -7,17 +7,17 @@ export type FieldOptions<T> = {
   initialValue: T;
   label?: string;
   name?: string;
-  validate?: FieldValidateCallback<T>;
+  // validate?: FieldValidateCallback<T>;
 };
 
 export type FieldState<T> = {
   clear: boolean;
   dirty: boolean;
   disabled: boolean;
-  error: string;
+  // error: string;
   focused: boolean;
   invalid: boolean;
-  label: string;
+  // label: string;
   name: string;
   touched: boolean;
   valid: boolean;
@@ -31,49 +31,23 @@ export class Field<T> {
   private _disabled: boolean = false;
 
   @observable
-  private _error: string = null;
-
-  @observable
   private _focused = false;
-
-  @observable
-  private _label: string = "";
-
-  @observable
-  private _name: string = "unnamed";
 
   @observable
   private _touched: boolean = false;
 
-  @observable
-  private _value: T;
-
   constructor(
-    /**
-     * todo: does it need to know the formStore?
-     */
-    private readonly _formStore: FormStore<any>,
-    private readonly _initialOptions: FieldOptions<T>
+    private readonly _store: FormStore<any>,
+    private readonly _name: string
   ) {
-    this.log("constructor", _initialOptions);
-
-    this._options = {
-      ..._initialOptions,
-      initialValue:
-        _initialOptions.initialValue != null
-          ? _initialOptions.initialValue
-          : null,
-      validate: _initialOptions.validate || null
-    };
-
-    this._label = this._options.label;
-    this._name = this._options.name;
-    this._value = this._options.initialValue;
+    this.log("constructor", { _name });
   }
 
   @computed
   public get dirty() {
-    return this._value !== this._options.initialValue;
+    // FIXME: not implemented
+    return false;
+    // return this._value !== this._options.initialValue;
   }
 
   @computed
@@ -90,19 +64,24 @@ export class Field<T> {
     return this._focused;
   }
 
-  @computed
-  get hasError() {
-    return Boolean(this._error);
+  public set focused(v: boolean) {
+    this.log("set focused", v);
+    this._focused = v;
   }
 
-  @computed
-  public get label() {
-    return this._label;
-  }
+  // @computed
+  // get hasError() {
+  //   return Boolean(this._error);
+  // }
 
-  public set label(v: string) {
-    this._label = v;
-  }
+  // @computed
+  // public get label() {
+  //   return this._label;
+  // }
+
+  // public set label(v: string) {
+  //   this._label = v;
+  // }
 
   @computed
   public get name(): string {
@@ -115,10 +94,10 @@ export class Field<T> {
       clear: !this.dirty,
       dirty: this.dirty,
       disabled: this.disabled,
-      error: this.error,
+      // error: this.error,
       focused: this.focused,
       invalid: !this.valid,
-      label: this.label,
+      // label: this.label,
       name: this.name,
       touched: this.touched,
       valid: this.valid,
@@ -138,40 +117,39 @@ export class Field<T> {
 
   @computed
   public get valid() {
-    return !Boolean(this._error);
+    // FIXME: not implemented
+    return true;
+    // return !Boolean(this._error);
   }
 
   @computed
   public get value() {
-    return this._value;
+    return this._store.getValue(this._name) as T;
   }
 
   public set value(v: T) {
-    this._value = v;
-    this.touched = true;
-    this._validate();
+    this._store.setValue(this._name, v);
   }
 
-  @computed
-  public get error() {
-    return this._error;
-  }
+  // @computed
+  // public get error() {
+  //   return this._error;
+  // }
 
   @computed
   public get formProps() {
     return {
       onBlur: this.onBlur,
-      onChange: this.onChange,
-      onFocus: this.onFocus,
-      // @ts-ignore
+      onChange: this.onChangeHandler,
+      onFocus: this.onFocusHandler,
       name: this.name,
       value: this.value
     };
   }
 
-  public reset() {
-    this.value = this._options.initialValue;
-  }
+  // public reset() {
+  //   this.value = this._options.initialValue;
+  // }
 
   @action.bound
   protected onBlur() {
@@ -181,7 +159,7 @@ export class Field<T> {
   }
 
   @action.bound
-  protected onChange(e) {
+  protected onChangeHandler(e) {
     this.log("onChange", e);
 
     if (!e || !e.target || typeof e.target.value === "undefined") {
@@ -189,11 +167,11 @@ export class Field<T> {
       return;
     }
 
-    this.value = e.target.value;
+    this._store.setValue(this._name, e.target.value);
   }
 
   @action.bound
-  protected onFocus() {
+  protected onFocusHandler() {
     this.log("onFocus");
     this._focused = true;
   }
@@ -202,29 +180,36 @@ export class Field<T> {
     console.log(`Field ${this.name}`, ...args);
   }
 
-  private _validate() {
-    if (!this._options.validate) {
-      return;
-    }
+  // private _validate() {
+  //   if (!this._options.validate) {
+  //     return;
+  //   }
+  //
+  //   const result = this._options.validate(this._value);
+  //
+  //   if (result === true) {
+  //     this._error = null;
+  //     return;
+  //   }
+  //
+  //   if (result === false) {
+  //     this._error = "invalid value";
+  //     return;
+  //   }
+  //
+  //   if (typeof result === "string") {
+  //     this._error = result;
+  //     return;
+  //   }
+  //
+  //   // @ts-ignore
+  //   this._error = result.toString();
+  // }
+}
 
-    const result = this._options.validate(this._value);
-
-    if (result === true) {
-      this._error = null;
-      return;
-    }
-
-    if (result === false) {
-      this._error = "invalid value";
-      return;
-    }
-
-    if (typeof result === "string") {
-      this._error = result;
-      return;
-    }
-
-    // @ts-ignore
-    this._error = result.toString();
-  }
+export function field<T>(options: FieldOptions<T>) {
+  return {
+    __formxFieldOptions: true,
+    ...options
+  };
 }

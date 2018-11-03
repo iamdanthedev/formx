@@ -1,0 +1,3 @@
+--require test/ts-hook.js
+--exit
+test/**.test.ts
