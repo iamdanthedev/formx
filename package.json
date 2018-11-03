@@ -6,7 +6,7 @@
   "typings": "lib/index.d.ts",
   "scripts": {
     "test": "mocha",
-    "start": "parcel test/react/index.html",
+    "start": "nodemon -e ts,tsx,html --watch src --watch test --exec \"parcel test/react/index.html\"",
     "build": "rimraf lib && tsc --project tsconfig.build.json"
   },
   "keywords": [],
@@ -17,7 +17,7 @@
     "@types/chai": "^4.1.6",
     "@types/debug": "0.0.31",
     "@types/mocha": "^5.2.5",
-    "@types/react": "^16.4.16",
+    "@types/react": "^16.4.18",
     "@types/react-dom": "^16.0.9",
     "@types/react-router": "^4.0.32",
     "@types/react-router-dom": "^4.3.1",
@@ -28,10 +28,11 @@
     "mobx": "^5.5.0",
     "mobx-react": "^5.2.8",
     "mocha": "^5.2.0",
+    "nodemon": "^1.18.5",
     "parcel-bundler": "^1.10.3",
     "prettier": "^1.14.3",
-    "react": "^16.5.2",
-    "react-dom": "^16.5.2",
+    "react": "^16.6.0",
+    "react-dom": "^16.6.0",
     "react-router": "^4.3.1",
     "react-router-dom": "^4.3.1",
     "recompose": "^0.30.0",
@@ -42,5 +43,11 @@
   },
   "peerDependencies": {
     "mobx": "^5.5.0"
+  },
+  "dependencies": {
+    "lodash.clone": "^4.5.0",
+    "lodash.get": "^4.4.2",
+    "lodash.isequal": "^4.5.0",
+    "lodash.set": "^4.3.2"
   }
 }

@@ -18,54 +18,27 @@ class Form2Data {
   }>;
 }
 
+const form2InitialValues = {
+  firstName: "",
+  lastName: "",
+  address: null,
+  specializations: [],
+  contacts: []
+};
+
 export class Form2Store extends FormStore<Form2Data> {
   constructor() {
-    super({
-      firstName: field({
-        initialValue: "",
-        label: "First Name",
-        validate: onlyLetters
-      }),
+    super();
 
-      lastName: field({
-        initialValue: "",
-        label: "Last Name (only letters)",
-        validate: onlyLetters
-      }),
-
-      address: {
-        street: field({
-          initialValue: "",
-          label: "Street name",
-          validate: onlyLetters
-        }),
-
-        zipCode: field({
-          initialValue: "",
-          label: "Zip Code",
-          validate: onlyNumbers
-        })
-      },
-
-      specializations: field({
-        initialValue: [],
-        label: "Specializations"
-      }),
-
-      contacts: you
-    });
+    this.initialize(form2InitialValues);
 
     this.__name = "Form2";
-
     window["form2"] = this;
   }
 
-  // @computed
-  // get name() {
-  //   return `${this.field("firstName").value} ${
-  //     this.field("lastName").value
-  //   }`.trim();
-  // }
+  get name() {
+    return `${this.values.firstName} ${this.values.lastName}`.trim();
+  }
 
   onSubmit() {
     return stubSubmit(this.values);

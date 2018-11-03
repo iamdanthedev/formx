@@ -1,8 +1,11 @@
+import { toJS } from "mobx";
 import * as React from "react";
+import clone from "lodash.clone";
+import isEqual from "lodash.isequal";
+import get from "lodash.get";
+import set from "lodash.set";
 import { action, computed, observable } from "mobx";
-import { FormAdministration } from "./FormAdministration";
 import { Field, FieldOptions } from "./Field";
-import { objectToFlatMapDeep } from "./utils";
 
 export type FormErrors<T extends {}> = Record<keyof T, string>;
 
@@ -38,20 +41,45 @@ export type FormState<T extends {}> = {
   values: T;
 };
 
-export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
+type FormFields<T> = { [K in keyof T]?: Field<T[K]> };
+
+export abstract class FormStore<
+  T extends BaseFormData,
+  K extends keyof T = keyof T
+> {
   protected __name = "unnamed-form-store";
-  private readonly _administration: FormAdministration<T>;
+  // private readonly _administration: FormAdministration<T>;
 
   @observable
   private _submitting;
 
-  constructor(fields: FieldsDescription<T>) {
-    this._administration = new FormAdministration();
-    this._registerFields(fields);
+  @observable
+  private _fields: FormFields<T> = {};
 
-    this.field = this.field.bind(this);
-    this.fieldProps = this.fieldProps.bind(this);
+  private _values = observable.box<T>({} as any);
+
+  @observable
+  private _initialValues: T;
+
+  @observable
+  private _initialized = false;
+
+  constructor() {
+    // this._administration = new FormAdministration();
+    // this._registerFields(fields);
+
+    this.getField = this.getField.bind(this);
+    // this.fieldProps = this.fieldProps.bind(this);
+    // this.registerField = this.registerField.bind(this);
+    // this.unregisterField = this.unregisterField.bind(this);
+    this.onResetHandler = this.onResetHandler.bind(this);
     this.submit = this.submit.bind(this);
+  }
+
+  public initialize(v: T) {
+    this._initialValues = clone(v);
+    this._values.set(clone(v));
+    this._initialized = true;
   }
 
   @computed
@@ -61,20 +89,17 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
 
   @computed
   public get dirty() {
-    return this._administration.fieldsArray.reduce(
-      (p, c) => p || c.field.dirty,
-      false
-    );
+    return !isEqual(this._values.get(), toJS(this._initialValues));
   }
 
-  @computed
-  public get fields(): Array<Field<any>> {
-    return this._administration.fieldsArray.map(f => f.field);
-  }
+  // @computed
+  // public get fields(): Array<Field<any>> {
+  //   return this._administration.fieldsArray.map(f => f.field);
+  // }
 
   @computed
   public get focusedField() {
-    const field = this._administration.fieldsArray.find(f => f.field.focused);
+    const field = this.fieldsArray.find(f => f.field.focused);
     return field ? field.field : null;
   }
 
@@ -90,45 +115,38 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
 
   @computed
   public get touched() {
-    return this._administration.fieldsArray.reduce(
-      (p, c) => p || c.field.touched,
-      false
-    );
+    return this.fieldsArray.reduce((p, c) => p || c.field.touched, false);
   }
 
   @computed
   public get valid() {
-    return this._administration.fieldsArray.reduce(
-      (p, c) => p && c.field.valid,
-      true
-    );
+    return this.fieldsArray.reduce((p, c) => p && c.field.valid, true);
   }
 
   @computed
   public get values(): T {
-    const result = ({} as any) as T;
-    const keys = Object.getOwnPropertyNames(this._administration.fields);
+    return this._values.get();
+  }
 
-    keys.forEach(key => {
-      result[key] = this._administration.fields[key].value;
-    });
-
-    return result;
+  public set values(v: T) {
+    this._values.set(v);
   }
 
   @computed
   get errors(): FormErrors<T> {
-    const result = ({} as any) as FormErrors<T>;
-    const keys = Object.getOwnPropertyNames(this._administration.fields);
-
-    keys.forEach(key => {
-      const err = this._administration.fields[key].error;
-      if (err != null) {
-        result[key] = this._administration.fields[key].error;
-      }
-    });
-
-    return result;
+    // FIXME: not implemented
+    return {} as any;
+    // const result = ({} as any) as FormErrors<T>;
+    // const keys = Object.getOwnPropertyNames(this._administration.fields);
+    //
+    // keys.forEach(key => {
+    //   const err = this._administration.fields[key].error;
+    //   if (err != null) {
+    //     result[key] = this._administration.fields[key].error;
+    //   }
+    // });
+    //
+    // return result;
   }
 
   @computed
@@ -147,26 +165,31 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
     };
   }
 
-  public field(key: K) {
-    return this._administration.getField(key);
+  @computed
+  public get fields() {
+    return this._fields;
   }
 
-  /**
-   * @todo probably not needed
-   */
-  public fieldProps<K extends keyof T = keyof T>(
-    key: K
-  ): CommonFieldProps<T[K]> {
-    const field = this._administration.getField(key);
+  @computed
+  public get fieldsArray() {
+    return Object.keys(this._fields).map(key => ({
+      key,
+      field: this._fields[key]
+    })) as Array<{ key: K; field: Field<T[K]> }>;
+  }
 
-    if (!field) {
-      console.error(
-        `Field ${key} not found. All fields must be initialized with @observableField`
-      );
-      return null;
-    }
+  public getField(name: string) {
+    return this._fields[name];
+  }
 
-    return field.formProps;
+  public getValue(name: string) {
+    return get(this._values.get(), name);
+  }
+
+  public setValue(name: string, value: any) {
+    const values = this._values.get();
+    set(values, name, value);
+    this._values.set(values);
   }
 
   @action
@@ -199,41 +222,45 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
       });
   }
 
+  public onResetHandler(e: React.FormEvent<HTMLFormElement>) {
+    this.reset();
+  }
+
   onSubmit?(): Promise<any>;
   onSubmitSuccess?(submitRes: any): Promise<T>;
   onSubmitFail?(e: any): Promise<FormErrors<T>>;
 
-  /**
-   * @todo: remove name argugment, should user field.name
-   */
   @action.bound
-  registerField<V>(name: string, field: Field<V>) {
-    this._administration.registerField(name, field);
+  registerField<V>(name: string) {
+    if (this._fields[name]) {
+      throw new Error(
+        `Attempt to register field ${name} failed. \nReason: field already registered`
+      );
+    }
+
+    const field = new Field(this, name);
+    this._fields[name] = field;
+
+    return this._fields[name];
   }
 
   @action.bound
-  reset() {
-    Object.keys(this._administration.fields).forEach(key => {
-      this._administration.fields[key].reset();
-    });
+  unregisterField<V>(name: string) {
+    delete this._fields[name];
   }
 
-  validate?(): Promise<T>;
+  @action.bound
+  reset(values?: T) {
+    if (values != null) {
+      this._initialValues = clone(values);
+    }
+
+    this._values.set(values ? clone(values) : clone(toJS(this._initialValues)));
+  }
+
+  // validate?(): Promise<T>;
 
   protected _log(...args: any[]) {
     console.log(`FormStore ${this.__name}`, ...args);
-  }
-
-  private _registerFields(fields: FieldsDescription<T>) {
-    const fieldMap = objectToFlatMapDeep(
-      fields,
-      "",
-      f => f.__formxFieldOptions
-    );
-
-    fieldMap.forEach(({ path, value: fieldOptions }) => {
-      const field = new Field(null, fieldOptions);
-      this._administration.registerField(path, field);
-    });
   }
 }
