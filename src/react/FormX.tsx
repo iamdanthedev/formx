@@ -5,11 +5,11 @@ import { FormStore } from "../FormStore";
 
 const log = debug("FormXReact:FormX");
 
-export type FormXProps = {
-  store: FormStore<any>;
+export type FormXProps<T> = {
+  store: FormStore<T>;
 };
 
-class FormX extends React.Component<FormXProps> {
+class FormX<T> extends React.Component<FormXProps<T>> {
   shouldComponentUpdate() {
     return false;
   }

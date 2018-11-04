@@ -1,6 +1,6 @@
 import { toJS } from "mobx";
 import * as React from "react";
-import { clone, isEqual, get, set, merge } from "lodash";
+import { clone, debounce, isEqual, get, set, merge } from "lodash";
 import { action, computed, observable } from "mobx";
 import { Field } from "./Field";
 import { FormState, BaseFormData, FormErrors, FormFields } from "./types";
@@ -17,7 +17,7 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
   validate?(): () => FormErrors<T> | Promise<any> | void;
   validationSchema?: any | (() => any);
 
-  protected __name = "unnamed-form-store";
+  protected __name = "";
   // private readonly _administration: FormAdministration<T>;
 
   @observable
@@ -41,10 +41,13 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
   @observable
   private _initialized = false;
 
+  private _runValidationDebounced: () => void = null;
+
   constructor() {
     this.getField = this.getField.bind(this);
     this.onResetHandler = this.onResetHandler.bind(this);
     this.submit = this.submit.bind(this);
+    this._validate = this._validate.bind(this);
   }
 
   public initialize(v: T) {
@@ -160,6 +163,19 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
     })) as Array<{ key: K; field: Field<T[K]> }>;
   }
 
+  public set debounceValidationMs(v: number) {
+    if (v > 0) {
+      this._log("setting validation debounce time", v);
+      this._runValidationDebounced = debounce(this._runValidation, v, {
+        leading: true,
+        trailing: true
+      });
+    } else {
+      this._log("removing validation debounce time");
+      this._runValidationDebounced = null;
+    }
+  }
+
   public getField(name: string) {
     return this._fields[name];
   }
@@ -251,8 +267,17 @@ export class FormStore<T extends BaseFormData, K extends keyof T = keyof T> {
     console.log(`FormStore ${this.__name}`, ...args);
   }
 
-  @action.bound
   private _validate() {
+    if (this._runValidationDebounced) {
+      return this._runValidationDebounced();
+    }
+
+    this._runValidation();
+  }
+
+  @action.bound
+  private _runValidation() {
+    this._log("_runValidation");
     this._isValidating = true;
 
     Promise.all([

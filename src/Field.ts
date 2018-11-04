@@ -89,7 +89,7 @@ export class Field<T> {
 
   @computed
   public get error() {
-    return this._store.getError(this._name);
+    return this._store.getError(this._name) as string;
   }
 
   @computed

@@ -56,13 +56,14 @@ export class Form2Store extends FormStore<Form2Data> {
 
     this.__name = "Form2";
     window["form2"] = this;
+    this.debounceValidationMs = 250;
   }
 
   get name() {
     return `${this.values.firstName} ${this.values.lastName}`.trim();
   }
 
-  onSubmit() {
+  onSubmit = () => {
     return stubSubmit(this.values);
   }
 
