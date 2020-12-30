@@ -1,8 +1,0 @@
-{
-  "compilerOptions": {
-    "declaration": true
-  },
-  "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "dist", "test"],
-  "include": ["src", "test"]
-}
