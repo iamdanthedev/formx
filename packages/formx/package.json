@@ -22,5 +22,6 @@
   },
   "bugs": {
     "url": "https://github.com/iamdanthedev/FormX/issues"
-  }
+  },
+  "types": "./types/index.d.ts"
 }

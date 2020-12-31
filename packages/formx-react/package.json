@@ -27,5 +27,17 @@
   },
   "bugs": {
     "url": "https://github.com/iamdanthedev/FormX/issues"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "mobx": "*",
+    "mobx-react": "*"
+  },
+  "devDependencies": {
+    "mobx-react": "^7.0.5",
+    "react": "^17.0.1"
+  },
+  "dependencies": {
+    "formx": "^1.0.0"
   }
 }

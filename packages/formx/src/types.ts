@@ -13,7 +13,7 @@ export type FormErrors<T> = {
   [K in keyof T]?: T[K] extends object ? FormErrors<T[K]> : string
 };
 
-export type FormFields<T> = { [K in keyof T]?: Field<T[K]> };
+export type FormFields<T> = { [K: string]: Field<any> };
 
 export type KeyValue<T, K extends keyof T> = { key: keyof T; field: Field<T[K]> };
 

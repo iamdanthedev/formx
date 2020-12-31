@@ -1,10 +1,8 @@
-import * as React from "react";
+import React from "react";
 import debug from "debug";
 import { Observer } from "mobx-react";
+import { FormStore } from "formx";
 import { FormContext, FormContextType } from "./FormContext";
-import FormField from "./FormField";
-import { FormStore } from "../FormStore";
-import { Field } from "../Field";
 
 type FieldArrayHelpers<T> = {
   name: string;
@@ -18,10 +16,10 @@ type Props<T> = {
   children: (
     helpers: FieldArrayHelpers<T>,
     store: FormStore<any>
-  ) => React.ReactNode;
+  ) => React.ReactElement<any>;
 };
 
-class FieldArray<T> extends React.Component<Props<T>, {}, FormContextType> {
+export class FieldArray<T> extends React.Component<Props<T>, {}, FormContextType> {
   static contextType = FormContext;
 
   log: debug.IDebugger;
@@ -30,9 +28,7 @@ class FieldArray<T> extends React.Component<Props<T>, {}, FormContextType> {
     super(props);
 
     if (!context || !context.store) {
-      throw new Error(
-        "missing context. FormField should be nested within FormX"
-      );
+      throw new Error("missing context. FormField should be nested within FormX");
     }
 
     this.log = debug(`FormXReact:FieldArray:${props.name}`);
@@ -45,7 +41,7 @@ class FieldArray<T> extends React.Component<Props<T>, {}, FormContextType> {
       return v;
     }
 
-    console.warn(`value is not an array in path ${name}`);
+    console.warn(`value is not an array in path ${this.props.name}`);
     return [];
   }
 
@@ -87,5 +83,3 @@ class FieldArray<T> extends React.Component<Props<T>, {}, FormContextType> {
     );
   }
 }
-
-export default FieldArray;

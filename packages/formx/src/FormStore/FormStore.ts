@@ -8,14 +8,15 @@ import isPlainObject from "lodash.isplainobject";
 import get from "lodash.get";
 import set from "lodash.set";
 import { FormState } from "./FormState";
-import { FormErrors, FormFields, ErrorSelector, KeyValue, HTMLEvent } from "../types";
+import { FormData, FormErrors, FormFields, ErrorSelector, KeyValue, HTMLEvent } from "../types";
 import { FormStoreOptions } from "./FormStoreOptions";
 import { FormEventEmitter } from "./FormEvents";
 import { FieldOptions } from "../Field/FieldOptions";
 import { Field } from "../Field/Field";
 import { isPromise } from "../utils";
+import { IFormStore } from "./IFormStore";
 
-export class FormStore<T extends FormData> extends FormEventEmitter<T> {
+export class FormStore<T extends FormData> extends FormEventEmitter<T> implements IFormStore<T> {
   constructor(private options: FormStoreOptions<T>) {
     super();
 
@@ -265,13 +266,12 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> {
     this.reset();
   }
 
-  @action.bound registerField<V, K extends keyof T>(name: K, fieldOptions: FieldOptions<V>) {
+  @action.bound registerField<F = any>(name: string, fieldOptions: FieldOptions<any>) {
     if (this._fields[name]) {
       return this._fields[name];
     }
 
-    const field = new Field<T[K]>(this, name.toString(), fieldOptions);
-    this._fields[name] = field;
+    this._fields[name] = new Field<F>(this, name.toString(), fieldOptions);
 
     return this._fields[name];
   }
