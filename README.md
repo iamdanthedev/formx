@@ -1,5 +1,5 @@
 ```
-npm i formx formx-react`
+npm i formx formx-react
 ```
 
 readme is in progress
