@@ -11,22 +11,26 @@ type Props<T> = {
   fieldOptions?: FieldOptions<any>;
 };
 
-export function FormField<T = any>(props: Props<T>) {
+export function useFormField<T = any>(name: string, options?: FieldOptions<T>) {
   const formStore = useFormStore();
 
   if (!formStore) {
     throw new Error("FormField should be nested under Form");
   }
 
-  const field = React.useMemo(() => formStore.registerField(props.name, props.fieldOptions), [
-    props.name,
-  ]);
+  const field = React.useMemo(() => formStore.registerField(name, options), [name]);
 
   useEffect(() => {
     return () => {
-      formStore.unregisterField(props.name);
+      formStore.unregisterField(name);
     };
   }, []);
+
+  return { field, formStore };
+}
+
+export function FormField<T = any>(props: Props<T>) {
+  const { field, formStore } = useFormField(props.name, props.fieldOptions);
 
   return <Observer>{() => props.children(field, formStore)}</Observer>;
 }

@@ -9,7 +9,7 @@ export function useGenericFormStore<T extends FormData>(options: Options<T>) {
   const store = useMemo(() => new FormStore<T>(options), []);
 
   useEffect(() => {
-    if (window !== undefined && options.exposeToWindowAs) {
+    if (options.exposeToWindowAs && typeof window != "undefined") {
       (window as any)[options.exposeToWindowAs] = store;
     }
   });

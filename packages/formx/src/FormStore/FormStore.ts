@@ -1,4 +1,4 @@
-import { action, computed, observable, runInAction, toJS } from "mobx";
+import { action, computed, observable, runInAction, toJS, set } from "mobx";
 import * as React from "react";
 import clone from "lodash.clone";
 import cloneDeep from "lodash.clonedeep";
@@ -6,7 +6,6 @@ import debounce from "lodash.debounce";
 import isEqual from "lodash.isequal";
 import isPlainObject from "lodash.isplainobject";
 import get from "lodash.get";
-import set from "lodash.set";
 import { FormState } from "./FormState";
 import { FormData, FormErrors, FormFields, ErrorSelector, KeyValue, HTMLEvent } from "../types";
 import { FormStoreOptions } from "./FormStoreOptions";
@@ -179,19 +178,22 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
     throw new Error("getError arg must be string or function");
   }
 
-  public setValue(field: string, value: any) {
+  @action public setValue = (field: string, value: any) => {
     const prevValue = this.getValue(field);
-    set(this._values.get(), field, value);
+
+    (this._values.get() as any)[field] = value;
+    // set(this._values.get(), field, value);
+
     this.validate().finally(() => {
       this.emit("onAfterFieldSet", { field, value, prevValue });
     });
-  }
+  };
 
-  public setError(name: string, err: any) {
+  @action public setError = (name: string, err: any) => {
     set(this._errors.get(), name, err);
-  }
+  };
 
-  public push(name: string, value: any) {
+  @action public push = (name: string, value: any) => {
     const current = this.getValue(name);
 
     if (!current || !current.push) {
@@ -199,9 +201,9 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
     }
 
     this.setValue(name, current.concat(value));
-  }
+  };
 
-  public removeByIndex(name: string, index: number) {
+  @action public removeByIndex = (name: string, index: number) => {
     const current = this.getValue(name);
 
     if (!current || !current.length) {
@@ -215,24 +217,24 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
     const cloned = [...(current as any[])];
     cloned.splice(index, 1);
     this.setValue(name, cloned);
-  }
+  };
 
-  @action.bound public setErrors(errors: Array<{ Path: string; Message: string }>) {
+  @action public setErrors = (errors: Array<{ Path: string; Message: string }>) => {
     if (!Array.isArray(errors)) {
       return;
     }
     errors.forEach(err => this.setError(err.Path, err.Message));
-  }
+  };
 
-  public setSubmitting(value: boolean) {
+  @action public setSubmitting = (value: boolean) => {
     this._isSubmitting = value;
-  }
+  };
 
-  @action public submit(e?: HTMLEvent) {
+  @action public submit = (e?: HTMLEvent) => {
     this.submitAsync(e);
-  }
+  };
 
-  @action public submitAsync(e?: HTMLEvent) {
+  @action public submitAsync = (e?: HTMLEvent) => {
     if (e && e.preventDefault) {
       e.preventDefault();
     }
@@ -260,13 +262,13 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
       .finally(() => {
         this.disabled = false;
       });
-  }
+  };
 
   public onResetHandler(e: React.FormEvent<HTMLFormElement>) {
     this.reset();
   }
 
-  @action.bound registerField<F = any>(name: string, fieldOptions: FieldOptions<any>) {
+  @action registerField = <F = any>(name: string, fieldOptions: FieldOptions<any>) => {
     if (this._fields[name]) {
       return this._fields[name];
     }
@@ -274,13 +276,13 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
     this._fields[name] = new Field<F>(this, name.toString(), fieldOptions);
 
     return this._fields[name];
-  }
+  };
 
-  @action.bound unregisterField<V>(name: string) {
+  @action unregisterField = <V>(name: string) => {
     delete this._fields[name];
-  }
+  };
 
-  @action.bound reset(values?: T, dontValidate?: boolean) {
+  @action reset = (values?: T, dontValidate?: boolean) => {
     if (values != null) {
       this._initialValues = cloneDeep(values);
     }
@@ -294,23 +296,23 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
     if (!dontValidate) {
       this.validate();
     }
-  }
+  };
 
-  @action.bound resetToCurrent() {
+  @action resetToCurrent = () => {
     this._initialValues = cloneDeep(toJS(this.values));
-  }
+  };
 
-  public validate() {
+  @action public validate = () => {
     if (this._runValidationDebounced) {
       return Promise.resolve(this._runValidationDebounced());
     }
 
     return this._runValidation();
-  }
+  };
 
-  @action.bound private _runValidation() {
+  @action private _runValidation = (): Promise<void> => {
     if (!this.options?.validate) {
-      return;
+      return Promise.resolve();
     }
 
     this._isValidating = true;
@@ -326,9 +328,9 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
         console.error(err);
         this._isValidating = false;
       });
-  }
+  };
 
-  private _runValidateHandler(): Promise<FormErrors<T>> {
+  @action private _runValidateHandler = (): Promise<FormErrors<T>> => {
     return new Promise(resolve => {
       const maybePromisedErrors = this.options.validate(this);
 

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
+    "emitDecoratorMetadata": false,
     "declaration": true,
     "baseUrl": ".",
     "jsx": "react",

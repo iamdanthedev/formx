@@ -106,12 +106,12 @@ export class Field<T> {
     };
   }
 
-  @action.bound protected onBlur() {
+  @action protected onBlur = () => {
     this._focused = false;
     this.touched = true;
   }
 
-  @action.bound protected onChangeHandler(e) {
+  @action protected onChangeHandler = (e) => {
     const { transformValue } = this._options;
 
     if (e && e.target) {
@@ -121,7 +121,7 @@ export class Field<T> {
     this._store.setValue(this._name, transformValue(e));
   }
 
-  @action.bound protected onFocusHandler() {
+  @action protected onFocusHandler = () => {
     this._focused = true;
   }
 }
