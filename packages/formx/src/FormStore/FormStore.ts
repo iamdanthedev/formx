@@ -159,8 +159,8 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
     return get(this._values, name);
   }
 
-  public getInitialValue(name: string) {
-    return get(toJS(this._initialValues), name);
+  public getInitialValue<V>(name: string) {
+    return get(toJS(this._initialValues), name) as V;
   }
 
   public getError(selector: ErrorSelector<T>): string;
