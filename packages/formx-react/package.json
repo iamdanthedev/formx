@@ -1,6 +1,6 @@
 {
   "name": "formx-react",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "react bindings for formx",
   "keywords": [
     "react",
@@ -41,7 +41,7 @@
     "mobx-react": "^7.0.5"
   },
   "dependencies": {
-    "formx": "^1.0.0",
+    "formx": "^1.0.1",
     "mobx-react": "^7.0.5"
   }
 }
