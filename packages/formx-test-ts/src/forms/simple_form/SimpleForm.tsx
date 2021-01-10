@@ -3,6 +3,7 @@ import { useGenericFormStore, Form, FormDebugger } from "formx-react";
 import { FormState } from "./FormState";
 import { TextField } from "../../components/TextField";
 import { Button, Card, CardActions, CardContent, CardHeader } from "@material-ui/core";
+import { FormErrors } from "formx";
 
 interface Props {}
 
@@ -15,6 +16,19 @@ export function SimpleForm(props: Props) {
       login: "",
       password: "",
     },
+    validate: store => {
+      const errors: FormErrors<FormState> = {};
+
+      if (!store.values.login) {
+        errors.login = "empty login";
+      }
+
+      if (!store.values.password) {
+        errors.password = "empty password";
+      }
+
+      return errors;
+    }
   });
 
   return (

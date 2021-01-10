@@ -31,9 +31,8 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
         : null;
 
     if (options.initialValues) {
-      options.initialDirty
-        ? (this.values = options.initialValues)
-        : this.reset(options.initialValues);
+      this._values = observable(options.initialValues);
+      this._initialValues = clone(options.initialValues);
     }
   }
 
@@ -42,7 +41,7 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
   @observable private _isValidating = false;
   @observable private _disabled = false;
   @observable private _fields: FormFields<T> = {};
-  private _values = observable.box<T>({} as any, { deep: true });
+  @observable private _values: T;
   private _errors = observable.box<FormErrors<T>>({});
   @observable private _initialValues: T = {} as T;
   @observable private _initialized = false;
@@ -65,7 +64,7 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
   }
 
   @computed public get dirty() {
-    const current = toJS(this._values.get());
+    const current = toJS(this._values);
     const initial = toJS(this._initialValues || {});
 
     return !isEqual(current, initial);
@@ -101,11 +100,11 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
   }
 
   @computed public get values(): T {
-    return this._values.get();
+    return this._values;
   }
 
   public set values(v: T) {
-    this._values.set(v);
+    this._values = v;
     this.validate();
   }
 
@@ -157,7 +156,7 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
   }
 
   public getValue(name: string) {
-    return get(this._values.get(), name);
+    return get(this._values, name);
   }
 
   public getInitialValue(name: string) {
@@ -178,11 +177,12 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
     throw new Error("getError arg must be string or function");
   }
 
-  @action public setValue = (field: string, value: any) => {
+  public setValue = (field: string, value: any) => {
     const prevValue = this.getValue(field);
 
-    (this._values.get() as any)[field] = value;
-    // set(this._values.get(), field, value);
+    runInAction(() => {
+      set(this._values, field, value);
+    });
 
     this.validate().finally(() => {
       this.emit("onAfterFieldSet", { field, value, prevValue });
@@ -219,13 +219,6 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
     this.setValue(name, cloned);
   };
 
-  @action public setErrors = (errors: Array<{ Path: string; Message: string }>) => {
-    if (!Array.isArray(errors)) {
-      return;
-    }
-    errors.forEach(err => this.setError(err.Path, err.Message));
-  };
-
   @action public setSubmitting = (value: boolean) => {
     this._isSubmitting = value;
   };
@@ -246,7 +239,7 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
     this._isSubmitting = true;
     this._disabled = true;
 
-    this.options
+    return this.options
       .onSubmit()
       .then(res => {
         runInAction(() => {
@@ -288,9 +281,9 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
     }
 
     if (isPlainObject(values)) {
-      this._values.set(values ? toJS(values) : clone(toJS(this._initialValues)));
+      this._values = values ? toJS(values) : clone(toJS(this._initialValues));
     } else {
-      this._values.set(values);
+      this._values = values;
     }
 
     if (!dontValidate) {
@@ -349,5 +342,5 @@ export class FormStore<T extends FormData> extends FormEventEmitter<T> implement
         resolve((maybePromisedErrors as any) as FormErrors<T>);
       }
     });
-  }
+  };
 }

@@ -15,9 +15,14 @@ export function TextField(props: TextFieldProps) {
     <FormField name={props.name}>
       {(field, store) => {
         console.log(`TextField inner ${props.name}: render`);
+
         return (
           <MuiTextField
-            label={props.label} {...field.fieldProps} {...props.TextFieldProps} />
+            label={props.label}
+            {...field.fieldProps}
+            {...props.TextFieldProps}
+            helperText={field.error?.toString()}
+          />
         );
       }}
     </FormField>

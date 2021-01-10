@@ -98,6 +98,7 @@ export class Field<T> {
   @computed public get fieldProps() {
     return {
       disabled: this.disabled,
+      error: !!this.error,
       onBlur: this.onBlur,
       onChange: this.onChangeHandler,
       onFocus: this.onFocusHandler,
